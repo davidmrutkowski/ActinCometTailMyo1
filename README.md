@@ -1,5 +1,5 @@
 # ActinCometTail
-Brownian dynamics code that simulates a lamellipodium at the discrete filament level undergoing retrograde flow in the presence of a nascent focal adhesion. This code was developed for the simulations in Xu et al., Sci. Adv., https://doi.org/10.1101/2024.02.09.579714
+Brownian dynamics code that simulates the actin network growth (branching and filament elongation) around a surrounding nucleator bead under the effect of myosin-I. This code was developed for the simulations in Xu, Rutkowski, Rebowski, Boczkowska, Pollard, Dominguez, Vavylonis, and Ostap, bioRiv, https://doi.org/10.1101/2024.02.09.579714
 
 Compilation using g++: g++ -O3 -fopenmp -o main main.cpp *.cpp
 
