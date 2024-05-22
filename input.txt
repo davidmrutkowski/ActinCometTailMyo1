@@ -1,0 +1,16 @@
+dt 0.000035
+totalSimulationTime 100.0
+snapshotTime 0.35
+numThreads 4
+persistenceLength 17.0
+eta 1.05
+temperature 300.0
+thermalForcesOn false
+filamentBondK 1000.0
+branchAngleK 1.0
+numMonomersPerBead 37
+severCrosslinksWithExtension false
+excludedVolOn true
+maxLength 6
+forceMyosin 0.0
+outputName Run1
