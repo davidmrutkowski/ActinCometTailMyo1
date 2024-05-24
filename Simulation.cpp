@@ -1,3 +1,22 @@
+/**
+ * Copyright (C) 2024 Lehigh University.
+ *
+ * This program is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ *
+ * Author: David Rutkowski (dmr518@lehigh.edu)
+ */
+
 #include "Simulation.h"
 
 Simulation::Simulation()
@@ -42,7 +61,6 @@ Simulation::Simulation()
     forceMyosin = 0.0;
     
     
-    //taken from Akamatsu et al., per 100 nm segment
     branchingRatePerSegment = 3.5*0.5*1.0*0.3 *(40.0/140.0);
     
     
@@ -61,7 +79,6 @@ Simulation::Simulation()
     //https://stackoverflow.com/questions/37305104/how-to-generate-random-numbers-in-a-thread-safe-way-with-openmp
 	for (int i = 0; i < omp_get_max_threads(); i++)
 	{
-        // seeding with all different random numbers ensures that sequences should be unique???
         std::mt19937 gen(seed+i);
 		generators.emplace_back(std::mt19937(gen));
 	}
@@ -222,7 +239,6 @@ void Simulation::readParameterFile(std::string fileName)
     }
     else
     {
-        // throw an error
         throw std::runtime_error("main could not open: " + fileName);
     }
     
@@ -235,7 +251,6 @@ void Simulation::readParameterFile(std::string fileName)
     
     simBox = SimulationBox(boxSize, periodicX, periodicY, periodicZ);
     particleGrid = Grid(boxSize, periodicX, periodicY, periodicZ);
-    //cout << "particle grid size: " << L_zero*0.5 << endl;
     particleGrid.setBinSize(L_zero*0.5);
     
     if(!positionFileName.empty())
@@ -263,7 +278,6 @@ void Simulation::readParameterFile(std::string fileName)
     }
     readAngleFile();
     
-    // should determine this value by how fast individual particles are moving!!!
     double updateGridTime = 0.05*(140.0/40.0);
     updateGridStep = (int)round(updateGridTime / dt);
     
@@ -330,7 +344,6 @@ void Simulation::readXYZ()
                     std::string timeString = tempString.substr(pos+1,tempString.length());
                     
                     currSimTime = std::stod(timeString);
-                    //exit(0);
                 }
                 else if(linecount > 1)
                 {
@@ -348,7 +361,6 @@ void Simulation::readXYZ()
                     
                     
                     if(filamentIndex < 0 && type >= 0)
-                    //while(filaments.size() < type)
                     {
 						if(filaments.size() > 0 && filaments[filaments.size()-1].getNumParticles() <= 2)
 						{
@@ -362,7 +374,6 @@ void Simulation::readXYZ()
                         
                         if(newFilamentTag != type)
                         {
-                            // set tag of this filament to its value listed in xyz file...
                             f_TaggedVector.setTagAtPos(filaments.size()-1, type);
                         }
                         
@@ -372,9 +383,6 @@ void Simulation::readXYZ()
                     Coordinate newCoordinate = {x, y, z};
                     
                     Particle newParticle(x, y, z);
-                    // set type of particle to the filament tag
-                    // filament tag does not currently update so that they are conserved
-                    // but this is probably ok since only ever check that beads are on the same filament or not
                     newParticle.setType(type);
                     
                     int numStressMeasurements = 0;
@@ -407,7 +415,6 @@ void Simulation::readXYZ()
                         
                         int priorTag = filaments[filamentIndex].addParticleBack(newTag);
                         
-                        // add bonds here for filament as well? (needed to keep track of excluded volume interactions)
                         if(!filamentBondsInBondList && priorTag > -1)
                         {
                             // adds a bond between priorTag and newTag of type 0 if they are on the same filament
@@ -475,11 +482,6 @@ void Simulation::readBondFile()
                         // warning about particleI and/or particleJ being out of bounds
                         throw std::runtime_error(std::to_string(particleI) + " or " + std::to_string(particleJ) + " tags are larger than current max tag " + std::to_string(maxCurrTag));
                     }
-                    
-                    //add bond to binfo
-                    //int bondTag = binfo.addBond(particleI, particleJ, bondType);
-                    
-                    // SHOULD SET BOND CREATION TIME HERE IF IT IS IN BND FILE!!!
                     
                     //add bond tag to both particleI and particleJ
                     pinfo.addBond(Bond {particleI, particleJ, bondType, bond_creationTime, bond_destructionTime});
@@ -599,7 +601,6 @@ void Simulation::putAllParticlesInGrid()
         // if this tag exists
         if(tempTag >= 0)
         {
-            // can put particles in bins twice!!!!
             int newBin = particleGrid.putInGrid(tempTag, pinfo.getPosByIndex(i));
         }
     }
@@ -769,7 +770,6 @@ void Simulation::calcFilamentForces(int f)
         }
         else if(brokeDueToBending == false)
         {            
-            //Coordinate tempForce = bondForce * bcUnit;
             pinfo.addForce(bTag, tempForce);
             pinfo.addForce(cTag, -tempForce);
         }
@@ -805,7 +805,6 @@ double Simulation::calcMinDistanceCylinders(Coordinate ri, Coordinate rj, Coordi
     else if(tk < -0.5)
         tk = -0.5;
     
-    // does this work?
     firstTerm = -firstTerm;
     
     secondTerm = simBox.periodicWrap(R_kSquared * R_l - R_klSquared*R_k);
@@ -851,8 +850,6 @@ double Simulation::calcForces()
         }
     }
     
-	// calculate other forces using a scheduler based on the bins they are in
-    // or by using tempForces vector (this uses more memory)
     #pragma omp parallel for
     for(int p = 0; p < numParticles; p++)
     {
@@ -888,7 +885,6 @@ double Simulation::calcForces()
 
                 if(minDist < nucleatorFilamentInteractionDist)
                 {
-                    // withinRangeCount++;
                     double forceMag = 0.0;
                     
                     double kr = -1000.0;
@@ -899,7 +895,6 @@ double Simulation::calcForces()
                     
                     double length_k = rij.getMagnitude();
                     
-                    //double firstSegmentLength = (tk + 0.5) * length_k;
                     double firstSegmentLength = simBox.calcDistance(closestK, rj);
                     double secondSegmentLength = length_k - firstSegmentLength;
                     
@@ -946,7 +941,7 @@ double Simulation::calcForces()
             }
         }
         
-        // loop over extra angle particles (these might be too far away?)
+        // loop over extra angle particles
         std::vector <struct Angle> tempAngleList = pinfo.getAngleTagsByIndex(p);
         for(int la = tempAngleList.size()-1; la > -1; la--)
         {
@@ -1002,10 +997,8 @@ double Simulation::calcForces()
                     tempForces[omp_get_thread_num()][cIndex] = tempForces[omp_get_thread_num()][cIndex] + forceC;
                     
                     // angle criteria +- 25 degrees  
-                    //if(false)
                     if(theta <= 0.785398 || theta >= 1.65806)
                     {
-                        
                         // then remove this branch (angles and bond)
                         
                         // both angles will be removed when flagged bond is removed
@@ -1022,7 +1015,6 @@ double Simulation::calcForces()
                             std::vector <struct HalfBond> tmpBranchBondList = pinfo.getBondTagsByIndex(bIndex);
                             for(int b = 0; b < tmpBranchBondList.size(); b++)
                             {
-                                //cout << ang.j << " " << tmpBranchBondList[b].j << " " << tmpBranchBondList[b].bondTag << endl;
                                 Bond tmpBond = pinfo.getBond(tmpBranchBondList[b].bondTag);
                                 
                                 if(tmpBranchBondList[b].j == ang.k)
@@ -1099,7 +1091,6 @@ double Simulation::calcForces()
     
     if(excludedVolOn)
     {
-        // remove bonds before excluded volume calculations??? or in removeFlaggedBonds?
         int currNumBonds = pinfo.getNumBonds();
         
         std::vector <int> countPerThread (omp_get_max_threads());
@@ -1132,7 +1123,6 @@ double Simulation::calcForces()
                 }
             }
                 
-            // all bond distances must have been calculated before, store these somehow for use here?
             Coordinate R_k = simBox.calcDisplacement(ri, rj);
             double R_kSquared = R_k*R_k;
             
@@ -1144,9 +1134,6 @@ double Simulation::calcForces()
                 // if tag of neighboring bond is less than tag at pos b then calculate force
                 if(currNeighborBondTags[neigh] < pinfo.getBondTagAtPos(b))
                 {
-
-                    //Coordinate tempStress = {0.0, 0.0, 0.0};
-                    
                     Bond secondBond = pinfo.getBond(currNeighborBondTags[neigh]);
 
                     
@@ -1185,10 +1172,8 @@ double Simulation::calcForces()
                         Coordinate d_kl = closestDistanceBetweenLines(ri, rj, ri2, rj2, closestK, closestL);
                         double minDist = d_kl.getMagnitude();					
                         
-                        // calc potential regardless of minDist?
                         if(minDist < rRepulsiveInteraction)
                         {
-                           // withinRangeCount++;
                             double forceMag = 0.0;
                             
                             double kr = -1690.0;
@@ -1208,7 +1193,6 @@ double Simulation::calcForces()
                             
                             double length_l = R_l.getMagnitude();
                             
-                            //firstSegmentLength = (tl + 0.5) * length_l;
                             firstSegmentLength = simBox.calcDistance(closestL, rj2);
                             secondSegmentLength = length_l - firstSegmentLength;
                             
@@ -1268,8 +1252,6 @@ double Simulation::calcForces()
 				Coordinate unit_vec = (simBox.calcDisplacement(pinfo.getPos(bond_tag_j), pinfo.getPos(currTag))).getUnitCoord();
 				
 				int currIndex = pinfo.getIndexOfTag(currTag);
-				
-				//double force_myosin = 0.1;
 				
 				tempForces[omp_get_thread_num()][currIndex] = tempForces[omp_get_thread_num()][currIndex] + forceMyosin*unit_vec;
 				tempForces[omp_get_thread_num()][0] = tempForces[omp_get_thread_num()][0] - forceMyosin*unit_vec;
@@ -1354,7 +1336,6 @@ int Simulation::removeFlaggedBonds()
             
             std::cout << "Removing bond with tag: " << bTag << " " << "destruction time: " << currBond.destructionTime << std::endl;
             // this bond exists
-            //int currType = pinfo.getBondByIndex(currIndex).bondTypeIndex;
             //if(currType < 0)
             {
                 //if(currType == -1)
@@ -1458,8 +1439,6 @@ int Simulation::addParticlePutInGrid(Particle p, int numStressMeasurements)
     int newTag = pinfo.addParticle(p, numStressMeasurements);
     
     int newGrid = particleGrid.putInGrid(newTag, pinfo.getPos(newTag));
-    //if(newGrid == -1)
-    //    removeParticleByIndex(i);
     
     std::vector <int> tempNeighbors = particleGrid.getNeighboringTags(newTag);
     for(int i = 0; i < tempNeighbors.size(); i++)
@@ -1469,8 +1448,6 @@ int Simulation::addParticlePutInGrid(Particle p, int numStressMeasurements)
     
     // also need to set neighbors of newTag as well!
     pinfo.setNeighbors(newTag, tempNeighbors);
-    
-    // set bond neighbors as well here???
     
     return newTag;
 }
@@ -1507,7 +1484,7 @@ int Simulation::addBondFindNeighbors(Bond newBond)
     for(int neigh = newNeighboringTags.size()-1; neigh > -1; neigh--)
     {
         Bond neighborBond = pinfo.getBond(newNeighboringTags[neigh]);
-        //cout << "BondIndex != " << pinfo.getBondPosOfTag(newNeighboringTags[neigh]) << " && ";
+		
         Coordinate neigh_i = pinfo.getPos(neighborBond.i);
         Coordinate neigh_j = pinfo.getPos(neighborBond.j);
         
@@ -1651,14 +1628,12 @@ int Simulation::addFilament(int numBeads, Coordinate startPos, Coordinate direct
     
     for(int f = 0; f < numBeads; f++)
     {
-        //cout << "f: " << f << endl;
         // should put new particle in grid and update neighbors of all associated particles
         Coordinate newPosition = {startPos.x + direction.x*L_zero*f, startPos.y + direction.y*L_zero*f, startPos.z + direction.z*L_zero*f};
         newPosition = simBox.periodicWrap(newPosition);
         Particle newParticle(newPosition.x, newPosition.y, newPosition.z);
         newParticle.setType(newFilamentTag);
         
-        // new bond is not incorporated into bond neighbors though!!!
         int newTag = addParticlePutInGrid(newParticle, numStressMeasurements);
         int priorTag = filaments[filaments.size()-1].addParticleBack(newTag);
         
@@ -1670,13 +1645,10 @@ int Simulation::addFilament(int numBeads, Coordinate startPos, Coordinate direct
             newBond.creationTime = currSimTime;
             newBond.destructionTime = 1000000.0*140.0/40.0;
             
-            //pinfo.addBond(newBond);
             int success_add = addBondFindNeighbors(newBond);
             
             if(success_add != 0)
             {
-                //exit(0);
-                
                 // if this filament still exists, remove it
                 if(f_TaggedVector.getIndexOfTag(newFilamentTag) >= 0)
                 {
@@ -1762,7 +1734,6 @@ int Simulation::addFilamentSpecifyBondType(int numBeads, Coordinate startPos, Co
         Particle newParticle(newPosition.x, newPosition.y, newPosition.z);
         newParticle.setType(newFilamentTag);
         
-        // new bond is not incorporated into bond neighbors though!!!
         int newTag = addParticlePutInGrid(newParticle, numStressMeasurements);
         int priorTag = filaments[filaments.size()-1].addParticleBack(newTag);
         
@@ -1782,7 +1753,6 @@ int Simulation::addFilamentSpecifyBondType(int numBeads, Coordinate startPos, Co
                 if(f_TaggedVector.getIndexOfTag(newFilamentTag) >= 0)
                 {
                     removeFilament(newFilamentTag);
-                    //cout << "removed Filament?" << endl;
                 }
                 
                 return -1;
@@ -1917,8 +1887,6 @@ void Simulation::addFilamentTouchingNucleatorBead(bool crosslinkNeighboring)
     double randU = 2.0*dis(threadEngine) - 1.0;
     double randTheta = 2.0*pi*dis(threadEngine);
     
-    //randU = 0.0;
-    
     Coordinate randUnitVector = Coordinate {sqrt(1.0 - randU*randU) * cos(randTheta), sqrt(1.0 - randU*randU) * sin(randTheta), randU};
     
     // this is barbed end position
@@ -1986,7 +1954,6 @@ void Simulation::addRandomBranch(int numBeads)
         {
             Bond tempBond = pinfo.getBond(tempBondList[bb].bondTag);
             
-            //if(tempBond.bondTypeIndex == 3 && tempBond.i == randomTag)
             if(tempBond.bondTypeIndex == 3)
             {
                 // there is already a branch off of this particle, so do not bond to it
@@ -2216,7 +2183,6 @@ void Simulation::removeTemporaryCrosslinks()
     }
 }
 
-// what happens if the bond removed is internal to a filament??? Would need to reorganize filaments like in removeParticleByIndex
 void Simulation::removeBond(int bondTag)
 {
     int bondIndex = pinfo.getBondPosOfTag(bondTag);
@@ -2258,7 +2224,6 @@ void Simulation::removeBondByIndex(int bondIndex)
     }
 }
 
-// can probably do this when the grid is constructed instead (if particle is not in the grid then remove it)
 void Simulation::removeParticlesOutsideBox()
 {
     double minZ = simBox.getBoxLength(2);
@@ -2269,8 +2234,6 @@ void Simulation::removeParticlesOutsideBox()
         
         if(tempTag >= 0 && pinfo.getPosByIndex(p).z < -minZ)
         {
-            // can remove two particles at once, how to deal with this???
-            // may be okay just rechecks particles which were already checked
             removeParticleByIndex(p);
         }
     }
@@ -2306,7 +2269,7 @@ void Simulation::cleanNewFilament(Filament tempFil)
     {
         filaments.push_back(tempFil);
         
-        // don't cap newly broken filaments 20230203
+        // don't cap newly broken filaments
         filaments[filaments.size()-1].setCappedBarbedEnd(false);
         int newFilamentTag = f_TaggedVector.add();
         
@@ -2403,9 +2366,7 @@ void Simulation::addSegmentToExistingFilament(int filamentIndex)
     {
         Coordinate barbedEndPosition = pinfo.getPos(filaments[filamentIndex].getBarbedTag());
          
-        Coordinate nextPosition = pinfo.getPos(filaments[filamentIndex].getTagAtIndex(filaments[filamentIndex].getNumParticles()-2));
-        
-       
+        Coordinate nextPosition = pinfo.getPos(filaments[filamentIndex].getTagAtIndex(filaments[filamentIndex].getNumParticles()-2));       
         
         Coordinate unitVector = simBox.calcDisplacement(barbedEndPosition, nextPosition).getUnitCoord();
         
@@ -2433,7 +2394,6 @@ void Simulation::addSegmentToExistingFilament(int filamentIndex)
 
             #pragma omp critical
             {
-                // new bond is not incorporated into bond neighbors though!!!
                 int newTag = addParticlePutInGrid(newParticle, 0);
                 int priorTag = filaments[filamentIndex].addParticleBack(newTag);
                 
@@ -2468,7 +2428,6 @@ void Simulation::addMonomerToExistingFilament(int filamentIndex)
     {
         if(filaments[filamentIndex].getCappedBarbedEnd() == false)
         {
-            // need to get bond between last two particles in filament
             int barbedEndTag = filaments[filamentIndex].getTagAtIndex(numParticlesInFilament-1);
             int nextTag = filaments[filamentIndex].getTagAtIndex(numParticlesInFilament-2);
             
@@ -2488,12 +2447,7 @@ void Simulation::addMonomerToExistingFilament(int filamentIndex)
                 
                 // also need to move particle at free end here to simulate growth rather than expansion of filament bond both directions
                 
-                // assume tag_j is always the larger tag?
-
-                
                 pinfo.setPos(barbedEndTag, nextPosition + bondTypes[newBondType].getEqDist()*unit_disp);
-                
-                
                 
                 if(newBondType == 2+numMonomersPerBead)
                 {
@@ -2536,7 +2490,6 @@ void Simulation::addMonomerToExistingFilament(int filamentIndex)
 
                     #pragma omp critical
                     {
-                        // new bond is not incorporated into bond neighbors though!!!
                         int newTag = addParticlePutInGrid(newParticle, 0);
                         int priorTag = filaments[filamentIndex].addParticleBack(newTag);
                         
@@ -2650,7 +2603,6 @@ Coordinate Simulation::closestDistanceBetweenLines(Coordinate a0, Coordinate a1,
 
         double d1 = _A * (b1-a0);
 
-        // Is segment B before A?
         if (d0 <= 0 && 0 >= d1)
         {
             if (fabs(d0) < fabs(d1))
@@ -2674,7 +2626,6 @@ Coordinate Simulation::closestDistanceBetweenLines(Coordinate a0, Coordinate a1,
 
             return d_kl;
         }
-        // Is segment B after A?
         else if (d0 >= magA && magA <= d1)
         {
             if (fabs(d0) < fabs(d1))
@@ -2839,7 +2790,7 @@ void Simulation::run()
         
         if(mainLoopVar % updateGridStep == 0)
         {
-            // remove particles here if they are outside the simulation box when check if they are in grid?
+            // remove particles here if they are outside the simulation box when check if they are in grid
             // also generate the vector for use with addCrosslinks function
             putAllParticlesInGrid();
         }
