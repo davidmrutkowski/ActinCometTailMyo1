@@ -9,5 +9,5 @@ Command to run code: ./main input.txt
 Restart from previously run simulation: Add the following lines to input.txt: 
 positions last###.xyz 
 bonds last###.bnd
-angles last###.xyz
+angles last###.ang
 Change the outputName parameter to a new name to keep from overwriting previous output.
