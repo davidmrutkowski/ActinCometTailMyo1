@@ -1,5 +1,5 @@
 # ActinCometTailMyo1
-Brownian dynamics code that simulates actin network growth (actin branching and filament elongation) around a nucleator bead under the effect of myosin-I. This code was developed for the simulations in Xu, Rutkowski, Rebowski, Boczkowska, Pollard, Dominguez, Vavylonis, and Ostap, Sci. Adv., https://doi.org/10.1126/sciadv.ado5788
+Filament-level computational code that simulates actin network growth (actin branching and filament elongation) around a nucleator bead under the effect of myosin-I. This code was developed for the simulations in Xu, Rutkowski, Rebowski, Boczkowska, Pollard, Dominguez, Vavylonis, and Ostap, Sci. Adv., https://doi.org/10.1126/sciadv.ado5788
 
 Compilation using g++: g++ -O3 -fopenmp -o main *.cpp
 
